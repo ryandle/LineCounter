@@ -16,13 +16,14 @@ class Program
         string[] fileExtensions = { ".cs", ".js", ".html" };
         bool includeCurlyBraceLines = false;
 
-        foreach (string arg in args)
+        for (int i = 1; i < args.Length; i++)
         {
-            if (arg.StartsWith("-FileTypes"))
+            if (args[i] == "-FileTypes" && i + 1 < args.Length)
             {
-                fileExtensions = arg.Substring(11).Split(',');
+                fileExtensions = args[i + 1].Split(',');
+                i++;
             }
-            else if (arg == "-IncludeCurlyBraceLines")
+            else if (args[i] == "-IncludeCurlyBraceLines")
             {
                 includeCurlyBraceLines = true;
             }
