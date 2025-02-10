@@ -35,11 +35,10 @@ class Program
         foreach (var folder in result)
         {
             Console.WriteLine($"Folder: {folder.Key}");
-            Console.WriteLine($"Code lines: {folder.Value.CodeLines}");
-            Console.WriteLine($"Comment lines: {folder.Value.CommentLines}");
-            Console.WriteLine($"Brace lines: {folder.Value.BraceLines}");
-            Console.WriteLine($"Total lines: {folder.Value.TotalLines}");
-            Console.WriteLine();
+            Console.WriteLine($"\tCode lines: {folder.Value.CodeLines}");
+            Console.WriteLine($"\tComment lines: {folder.Value.CommentLines}");
+            Console.WriteLine($"\tBrace lines: {folder.Value.BraceLines}");
+            Console.WriteLine($"\tTotal lines: {folder.Value.TotalLines}");
         }
     }
 
@@ -75,7 +74,7 @@ class Program
             int braceLines = 0;
             int totalLines = 0;
 
-            foreach (string file in Directory.GetFiles(subDirectory, "*.*", SearchOption.TopDirectoryOnly))
+            foreach (string file in Directory.GetFiles(subDirectory, "*.*", SearchOption.AllDirectories))
             {
                 if (fileExtensions.Contains(Path.GetExtension(file)))
                 {
