@@ -14,7 +14,6 @@ class Program
 
         string directoryPath = args[0];
         string[] fileExtensions = { ".cs", ".js", ".html" };
-        bool includeCurlyBraceLines = false;
 
         for (int i = 1; i < args.Length; i++)
         {
@@ -22,10 +21,6 @@ class Program
             {
                 fileExtensions = args[i + 1].Split(',').Select(ext => ext.StartsWith(".") ? ext : "." + ext).ToArray();
                 i++;
-            }
-            else if (args[i] == "-IncludeCurlyBraceLines")
-            {
-                includeCurlyBraceLines = true;
             }
         }
 
@@ -35,45 +30,64 @@ class Program
             return;
         }
 
-        int totalLinesOfCode = CountLinesOfCode(directoryPath, fileExtensions, includeCurlyBraceLines);
-        Console.WriteLine($"Total lines of code (excluding comments and empty lines): {totalLinesOfCode}");
+        var result = CountLinesOfCode(directoryPath, fileExtensions);
+        Console.WriteLine($"Code lines: {result.CodeLines}");
+        Console.WriteLine($"Comment lines: {result.CommentLines}");
+        Console.WriteLine($"Brace lines: {result.BraceLines}");
+        Console.WriteLine($"Total lines: {result.TotalLines}");
     }
 
-    static int CountLinesOfCode(string directoryPath, string[] fileExtensions, bool includeCurlyBraceLines)
+    static (int CodeLines, int CommentLines, int BraceLines, int TotalLines) CountLinesOfCode(string directoryPath, string[] fileExtensions)
     {
-        int totalLinesOfCode = 0;
+        int codeLines = 0;
+        int commentLines = 0;
+        int braceLines = 0;
+        int totalLines = 0;
 
         foreach (string file in Directory.GetFiles(directoryPath, "*.*", SearchOption.AllDirectories))
         {
             if (fileExtensions.Contains(Path.GetExtension(file)))
             {
-                totalLinesOfCode += CountLinesInFile(file, includeCurlyBraceLines);
+                var result = CountLinesInFile(file);
+                codeLines += result.CodeLines;
+                commentLines += result.CommentLines;
+                braceLines += result.BraceLines;
+                totalLines += result.TotalLines;
             }
         }
 
-        return totalLinesOfCode;
+        return (codeLines, commentLines, braceLines, totalLines);
     }
 
-    static int CountLinesInFile(string filePath, bool includeCurlyBraceLines)
+    static (int CodeLines, int CommentLines, int BraceLines, int TotalLines) CountLinesInFile(string filePath)
     {
-        int linesOfCode = 0;
+        int codeLines = 0;
+        int commentLines = 0;
+        int braceLines = 0;
+        int totalLines = 0;
         bool inBlockComment = false;
 
         foreach (string line in File.ReadLines(filePath))
         {
             string trimmedLine = line.Trim();
+            totalLines++;
 
             if (trimmedLine.StartsWith("/*"))
             {
                 inBlockComment = true;
             }
 
-            if (!inBlockComment && !trimmedLine.StartsWith("//") && !string.IsNullOrEmpty(trimmedLine))
+            if (inBlockComment || trimmedLine.StartsWith("//"))
             {
-                if (includeCurlyBraceLines || (!includeCurlyBraceLines && trimmedLine != "{" && trimmedLine != "}"))
-                {
-                    linesOfCode++;
-                }
+                commentLines++;
+            }
+            else if (trimmedLine == "{" || trimmedLine == "}")
+            {
+                braceLines++;
+            }
+            else if (!string.IsNullOrEmpty(trimmedLine))
+            {
+                codeLines++;
             }
 
             if (inBlockComment && trimmedLine.EndsWith("*/"))
@@ -82,6 +96,6 @@ class Program
             }
         }
 
-        return linesOfCode;
+        return (codeLines, commentLines, braceLines, totalLines);
     }
 }

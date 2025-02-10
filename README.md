@@ -36,12 +36,3 @@ dotnet run --project ./workspace-blank <directory-path> -FileTypes cs,js,html
 ```
 
 Replace `<directory-path>` with the path to the folder you want to analyze.
-
-## Using the -IncludeCurlyBraceLines Parameter
-
-You can determine whether lines with only a curly brace are counted by using the `-IncludeCurlyBraceLines` argument. For example, to include lines with only a curly brace, run the application as follows:
-```
-dotnet run --project ./workspace-blank <directory-path> -IncludeCurlyBraceLines
-```
-
-Replace `<directory-path>` with the path to the folder you want to analyze.
