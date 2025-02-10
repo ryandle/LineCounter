@@ -14,10 +14,18 @@ class Program
 
         string directoryPath = args[0];
         string[] fileExtensions = { ".cs", ".js", ".html" };
+        bool includeCurlyBraceLines = false;
 
-        if (args.Length > 1 && args[1].StartsWith("-FileTypes"))
+        foreach (string arg in args)
         {
-            fileExtensions = args[1].Substring(11).Split(',');
+            if (arg.StartsWith("-FileTypes"))
+            {
+                fileExtensions = arg.Substring(11).Split(',');
+            }
+            else if (arg == "-IncludeCurlyBraceLines")
+            {
+                includeCurlyBraceLines = true;
+            }
         }
 
         if (!Directory.Exists(directoryPath))
@@ -26,11 +34,11 @@ class Program
             return;
         }
 
-        int totalLinesOfCode = CountLinesOfCode(directoryPath, fileExtensions);
+        int totalLinesOfCode = CountLinesOfCode(directoryPath, fileExtensions, includeCurlyBraceLines);
         Console.WriteLine($"Total lines of code (excluding comments and empty lines): {totalLinesOfCode}");
     }
 
-    static int CountLinesOfCode(string directoryPath, string[] fileExtensions)
+    static int CountLinesOfCode(string directoryPath, string[] fileExtensions, bool includeCurlyBraceLines)
     {
         int totalLinesOfCode = 0;
 
@@ -38,14 +46,14 @@ class Program
         {
             if (fileExtensions.Contains(Path.GetExtension(file)))
             {
-                totalLinesOfCode += CountLinesInFile(file);
+                totalLinesOfCode += CountLinesInFile(file, includeCurlyBraceLines);
             }
         }
 
         return totalLinesOfCode;
     }
 
-    static int CountLinesInFile(string filePath)
+    static int CountLinesInFile(string filePath, bool includeCurlyBraceLines)
     {
         int linesOfCode = 0;
         bool inBlockComment = false;
@@ -61,7 +69,10 @@ class Program
 
             if (!inBlockComment && !trimmedLine.StartsWith("//") && !string.IsNullOrEmpty(trimmedLine))
             {
-                linesOfCode++;
+                if (includeCurlyBraceLines || (!includeCurlyBraceLines && trimmedLine != "{" && trimmedLine != "}"))
+                {
+                    linesOfCode++;
+                }
             }
 
             if (inBlockComment && trimmedLine.EndsWith("*/"))
