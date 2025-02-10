@@ -70,7 +70,6 @@ class Program
         foreach (string line in File.ReadLines(filePath))
         {
             string trimmedLine = line.Trim();
-            totalLines++;
 
             if (trimmedLine.StartsWith("/*"))
             {
@@ -80,14 +79,17 @@ class Program
             if (inBlockComment || trimmedLine.StartsWith("//"))
             {
                 commentLines++;
+                totalLines++;
             }
             else if (trimmedLine == "{" || trimmedLine == "}")
             {
                 braceLines++;
+                totalLines++;
             }
             else if (!string.IsNullOrEmpty(trimmedLine))
             {
                 codeLines++;
+                totalLines++;
             }
 
             if (inBlockComment && trimmedLine.EndsWith("*/"))
