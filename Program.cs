@@ -20,7 +20,7 @@ class Program
         {
             if (args[i] == "-FileTypes" && i + 1 < args.Length)
             {
-                fileExtensions = args[i + 1].Split(',');
+                fileExtensions = args[i + 1].Split(',').Select(ext => ext.StartsWith(".") ? ext : "." + ext).ToArray();
                 i++;
             }
             else if (args[i] == "-IncludeCurlyBraceLines")
