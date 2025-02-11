@@ -2,6 +2,10 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading;
+
+// Define a record to replace the tuple
+record LineCounts(int CodeLines, int CommentLines, int BraceLines, int TotalLines);
 
 class Program
 {
@@ -31,8 +35,12 @@ class Program
             return;
         }
 
-        var result = CountLinesOfCode(directoryPath, fileExtensions);
-        foreach (var folder in result)
+        Dictionary<string, LineCounts> result = CountLinesOfCode(directoryPath, fileExtensions);
+
+        // Sort the result by TotalLines in descending order
+        IOrderedEnumerable<KeyValuePair<string, LineCounts>> sortedResult = result.OrderByDescending(folder => folder.Value.TotalLines);
+
+        foreach (KeyValuePair<string, LineCounts> folder in sortedResult)
         {
             Console.WriteLine($"Folder: {folder.Key}");
             Console.WriteLine($"\tCode lines: {folder.Value.CodeLines}");
@@ -42,9 +50,9 @@ class Program
         }
     }
 
-    static Dictionary<string, (int CodeLines, int CommentLines, int BraceLines, int TotalLines)> CountLinesOfCode(string directoryPath, string[] fileExtensions)
+    static Dictionary<string, LineCounts> CountLinesOfCode(string directoryPath, string[] fileExtensions)
     {
-        var folderStats = new Dictionary<string, (int CodeLines, int CommentLines, int BraceLines, int TotalLines)>();
+        var folderStats = new Dictionary<string, LineCounts>();
 
         // Count lines in the top-level directory
         int topLevelCodeLines = 0;
@@ -52,19 +60,26 @@ class Program
         int topLevelBraceLines = 0;
         int topLevelTotalLines = 0;
 
-        foreach (string file in Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly))
+        string[] topLevelFiles = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly);
+        int totalFiles = topLevelFiles.Length + Directory.GetDirectories(directoryPath).Sum(subDir => Directory.GetFiles(subDir, "*.*", SearchOption.AllDirectories).Length);
+        int processedFiles = 0;
+
+        Console.WriteLine($"Counting lines of code in {directoryPath}...{totalFiles} files to process.");
+        foreach (string file in topLevelFiles)
         {
             if (fileExtensions.Contains(Path.GetExtension(file)))
             {
-                var result = CountLinesInFile(file);
+                LineCounts result = CountLinesInFile(file);
                 topLevelCodeLines += result.CodeLines;
                 topLevelCommentLines += result.CommentLines;
                 topLevelBraceLines += result.BraceLines;
                 topLevelTotalLines += result.TotalLines;
             }
+            processedFiles++;
+            PrintProgress(processedFiles, totalFiles);
         }
 
-        folderStats[directoryPath] = (topLevelCodeLines, topLevelCommentLines, topLevelBraceLines, topLevelTotalLines);
+        folderStats[directoryPath] = new LineCounts(topLevelCodeLines, topLevelCommentLines, topLevelBraceLines, topLevelTotalLines);
 
         // Count lines in the first-level subdirectories
         foreach (string subDirectory in Directory.GetDirectories(directoryPath))
@@ -78,21 +93,23 @@ class Program
             {
                 if (fileExtensions.Contains(Path.GetExtension(file)))
                 {
-                    var result = CountLinesInFile(file);
+                    LineCounts result = CountLinesInFile(file);
                     codeLines += result.CodeLines;
                     commentLines += result.CommentLines;
                     braceLines += result.BraceLines;
                     totalLines += result.TotalLines;
                 }
+                processedFiles++;
+                PrintProgress(processedFiles, totalFiles);
             }
 
-            folderStats[subDirectory] = (codeLines, commentLines, braceLines, totalLines);
+            folderStats[subDirectory] = new LineCounts(codeLines, commentLines, braceLines, totalLines);
         }
 
         return folderStats;
     }
 
-    static (int CodeLines, int CommentLines, int BraceLines, int TotalLines) CountLinesInFile(string filePath)
+    static LineCounts CountLinesInFile(string filePath)
     {
         int codeLines = 0;
         int commentLines = 0;
@@ -131,6 +148,15 @@ class Program
             }
         }
 
-        return (codeLines, commentLines, braceLines, totalLines);
+        return new LineCounts(codeLines, commentLines, braceLines, totalLines);
+    }
+
+    static void PrintProgress(int processedFiles, int totalFiles)
+    {
+        Console.Write($"\rProcessing Files... {processedFiles}/{totalFiles}");
+        if (processedFiles == totalFiles)
+        {
+            Console.WriteLine();
+        }
     }
 }
