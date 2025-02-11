@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 
 // Define a record to replace the tuple
-record LineCounts(int CodeLines, int CommentLines, int BraceLines, int TotalLines);
+record LineCounts(int CodeLines, int CommentLines, int BraceLines, int UsingLines, int TotalLines);
 
 class Program
 {
@@ -40,14 +40,9 @@ class Program
         // Sort the result by TotalLines in descending order
         IOrderedEnumerable<KeyValuePair<string, LineCounts>> sortedResult = result.OrderByDescending(folder => folder.Value.TotalLines);
 
-        foreach (KeyValuePair<string, LineCounts> folder in sortedResult)
-        {
-            Console.WriteLine($"Folder: {folder.Key}");
-            Console.WriteLine($"\tCode lines: {folder.Value.CodeLines}");
-            Console.WriteLine($"\tComment lines: {folder.Value.CommentLines}");
-            Console.WriteLine($"\tBrace lines: {folder.Value.BraceLines}");
-            Console.WriteLine($"\tTotal lines: {folder.Value.TotalLines}");
-        }
+        // Use the HtmlResultExporter to export the results to HTML
+        IResultExporter exporter = new HtmlResultExporter();
+        exporter.Export(sortedResult);
     }
 
     static Dictionary<string, LineCounts> CountLinesOfCode(string directoryPath, string[] fileExtensions)
@@ -58,6 +53,7 @@ class Program
         int topLevelCodeLines = 0;
         int topLevelCommentLines = 0;
         int topLevelBraceLines = 0;
+        int topLevelUsingLines = 0;
         int topLevelTotalLines = 0;
 
         string[] topLevelFiles = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly);
@@ -73,13 +69,14 @@ class Program
                 topLevelCodeLines += result.CodeLines;
                 topLevelCommentLines += result.CommentLines;
                 topLevelBraceLines += result.BraceLines;
+                topLevelUsingLines += result.UsingLines;
                 topLevelTotalLines += result.TotalLines;
             }
             processedFiles++;
             PrintProgress(processedFiles, totalFiles);
         }
 
-        folderStats[directoryPath] = new LineCounts(topLevelCodeLines, topLevelCommentLines, topLevelBraceLines, topLevelTotalLines);
+        folderStats[directoryPath] = new LineCounts(topLevelCodeLines, topLevelCommentLines, topLevelBraceLines, topLevelUsingLines, topLevelTotalLines);
 
         // Count lines in the first-level subdirectories
         foreach (string subDirectory in Directory.GetDirectories(directoryPath))
@@ -87,6 +84,7 @@ class Program
             int codeLines = 0;
             int commentLines = 0;
             int braceLines = 0;
+            int usingLines = 0;
             int totalLines = 0;
 
             foreach (string file in Directory.GetFiles(subDirectory, "*.*", SearchOption.AllDirectories))
@@ -97,13 +95,14 @@ class Program
                     codeLines += result.CodeLines;
                     commentLines += result.CommentLines;
                     braceLines += result.BraceLines;
+                    usingLines += result.UsingLines;
                     totalLines += result.TotalLines;
                 }
                 processedFiles++;
                 PrintProgress(processedFiles, totalFiles);
             }
 
-            folderStats[subDirectory] = new LineCounts(codeLines, commentLines, braceLines, totalLines);
+            folderStats[subDirectory] = new LineCounts(codeLines, commentLines, braceLines, usingLines, totalLines);
         }
 
         return folderStats;
@@ -114,6 +113,7 @@ class Program
         int codeLines = 0;
         int commentLines = 0;
         int braceLines = 0;
+        int usingLines = 0;
         int totalLines = 0;
         bool inBlockComment = false;
 
@@ -136,6 +136,11 @@ class Program
                 braceLines++;
                 totalLines++;
             }
+            else if (trimmedLine.StartsWith("using") && trimmedLine.EndsWith(";"))
+            {
+                usingLines++;
+                totalLines++;
+            }
             else if (!string.IsNullOrEmpty(trimmedLine))
             {
                 codeLines++;
@@ -148,7 +153,7 @@ class Program
             }
         }
 
-        return new LineCounts(codeLines, commentLines, braceLines, totalLines);
+        return new LineCounts(codeLines, commentLines, braceLines, usingLines, totalLines);
     }
 
     static void PrintProgress(int processedFiles, int totalFiles)
