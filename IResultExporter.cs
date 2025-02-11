@@ -3,5 +3,5 @@ using System.Linq;
 
 interface IResultExporter
 {
-    void Export(IOrderedEnumerable<KeyValuePair<string, LineCounts>> sortedResult);
+    void Export(IOrderedEnumerable<KeyValuePair<string, LineCounts>> sortedResult, List<FileLineCounts> top25Files);
 }

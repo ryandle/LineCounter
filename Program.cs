@@ -6,6 +6,7 @@ using System.Threading;
 
 // Define a record to replace the tuple
 record LineCounts(int CodeLines, int CommentLines, int BraceLines, int UsingLines, int TotalLines);
+record FileLineCounts(string FilePath, int CodeLines, int CommentLines, int BraceLines, int UsingLines, int TotalLines);
 
 class Program
 {
@@ -35,19 +36,23 @@ class Program
             return;
         }
 
-        Dictionary<string, LineCounts> result = CountLinesOfCode(directoryPath, fileExtensions);
+        Dictionary<string, LineCounts> result = CountLinesOfCode(directoryPath, fileExtensions, out List<FileLineCounts> fileLineCounts);
 
         // Sort the result by TotalLines in descending order
         IOrderedEnumerable<KeyValuePair<string, LineCounts>> sortedResult = result.OrderByDescending(folder => folder.Value.TotalLines);
 
+        // Get the top 25 files by code lines
+        var top25Files = fileLineCounts.OrderByDescending(file => file.CodeLines).Take(25).ToList();
+
         // Use the HtmlResultExporter to export the results to HTML
         IResultExporter exporter = new HtmlResultExporter();
-        exporter.Export(sortedResult);
+        exporter.Export(sortedResult, top25Files);
     }
 
-    static Dictionary<string, LineCounts> CountLinesOfCode(string directoryPath, string[] fileExtensions)
+    static Dictionary<string, LineCounts> CountLinesOfCode(string directoryPath, string[] fileExtensions, out List<FileLineCounts> fileLineCounts)
     {
         var folderStats = new Dictionary<string, LineCounts>();
+        fileLineCounts = new List<FileLineCounts>();
 
         // Count lines in the top-level directory
         int topLevelCodeLines = 0;
@@ -66,6 +71,7 @@ class Program
             if (fileExtensions.Contains(Path.GetExtension(file)))
             {
                 LineCounts result = CountLinesInFile(file);
+                fileLineCounts.Add(new FileLineCounts(file, result.CodeLines, result.CommentLines, result.BraceLines, result.UsingLines, result.TotalLines));
                 topLevelCodeLines += result.CodeLines;
                 topLevelCommentLines += result.CommentLines;
                 topLevelBraceLines += result.BraceLines;
@@ -92,6 +98,7 @@ class Program
                 if (fileExtensions.Contains(Path.GetExtension(file)))
                 {
                     LineCounts result = CountLinesInFile(file);
+                    fileLineCounts.Add(new FileLineCounts(file, result.CodeLines, result.CommentLines, result.BraceLines, result.UsingLines, result.TotalLines));
                     codeLines += result.CodeLines;
                     commentLines += result.CommentLines;
                     braceLines += result.BraceLines;

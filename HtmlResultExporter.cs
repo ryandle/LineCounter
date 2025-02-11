@@ -6,7 +6,7 @@ using System.Text;
 
 class HtmlResultExporter : IResultExporter
 {
-    public void Export(IOrderedEnumerable<KeyValuePair<string, LineCounts>> sortedResult)
+    public void Export(IOrderedEnumerable<KeyValuePair<string, LineCounts>> sortedResult, List<FileLineCounts> top25Files)
     {
         StringBuilder html = new StringBuilder();
         html.AppendLine("<html>");
@@ -98,6 +98,31 @@ class HtmlResultExporter : IResultExporter
         html.AppendLine($"<td><b>{totalUsingLines}</b></td>");
         html.AppendLine($"<td><b>{totalLines}</b></td>");
         html.AppendLine("</tr>");
+
+        html.AppendLine("</table>");
+
+        html.AppendLine("<h2>Top 25 Files by Code Lines</h2>");
+        html.AppendLine("<table id='top25FilesTable' border='1'>");
+        html.AppendLine("<tr>");
+        html.AppendLine("<th>File Path</th>");
+        html.AppendLine("<th>Code Lines</th>");
+        html.AppendLine("<th>Comment Lines</th>");
+        html.AppendLine("<th>Brace Lines</th>");
+        html.AppendLine("<th>Using Lines</th>");
+        html.AppendLine("<th>Total Lines</th>");
+        html.AppendLine("</tr>");
+
+        foreach (var file in top25Files)
+        {
+            html.AppendLine("<tr>");
+            html.AppendLine($"<td>{file.FilePath}</td>");
+            html.AppendLine($"<td>{file.CodeLines}</td>");
+            html.AppendLine($"<td>{file.CommentLines}</td>");
+            html.AppendLine($"<td>{file.BraceLines}</td>");
+            html.AppendLine($"<td>{file.UsingLines}</td>");
+            html.AppendLine($"<td>{file.TotalLines}</td>");
+            html.AppendLine("</tr>");
+        }
 
         html.AppendLine("</table>");
         html.AppendLine("</body>");
