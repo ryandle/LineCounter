@@ -1,6 +1,6 @@
 # Line of Code Counter
 
-This C# console application counts the lines of code in a specified folder and its subfolders, excluding comments and empty lines.
+This C# console application written almost entirely with github copilot workspace.
 
 ## How to Run
 
